@@ -10,10 +10,13 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// Глобальная переменная для хранения соединения с БД
+var db *sql.DB
+
 func InitDB() (*sql.DB, error) {
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
-		connStr = "postgresql://keycloak:password@localhost:5432/keycloak?sslmode=disable"
+		connStr = "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 	}
 
 	db, err := sql.Open("postgres", connStr)
@@ -63,4 +66,20 @@ func createTables(db *sql.DB) error {
 
 	_, err := db.Exec(query)
 	return err
+}
+
+// GetDB возвращает глобальное соединение с базой данных
+func GetDB() *sql.DB {
+	if db == nil {
+		log.Fatal("Database not initialized. Call InitDB first.")
+	}
+	return db
+}
+
+// CloseDB закрывает соединение с базой данных
+func CloseDB() error {
+	if db != nil {
+		return db.Close()
+	}
+	return nil
 }

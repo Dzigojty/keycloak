@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"go-keycloak-app/database"
-	"go-keycloak-app/models"
+	"go-keycloak-app/go/database"
+	"go-keycloak-app/go/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,7 +22,7 @@ type KeycloakClient struct {
 	ClientSecret string
 }
 
-func NewKeycloakClient() (*KeycloakClient, error) {
+func NewKeycloakClient() *KeycloakClient {
 	baseURL := os.Getenv("KEYCLOAK_URL")
 	if baseURL == "" {
 		baseURL = "http://localhost:8080"
@@ -43,7 +43,7 @@ func NewKeycloakClient() (*KeycloakClient, error) {
 		Realm:        realm,
 		ClientID:     clientID,
 		ClientSecret: os.Getenv("KEYCLOAK_CLIENT_SECRET"),
-	}, nil
+	}
 }
 
 func (kc *KeycloakClient) Login(c *gin.Context) {
@@ -91,13 +91,16 @@ func (kc *KeycloakClient) Register(c *gin.Context) {
 }
 
 func (kc *KeycloakClient) RefreshToken(c *gin.Context) {
-	refreshToken := c.PostForm("refresh_token")
-	if refreshToken == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Refresh token is required"})
+	var refreshReq struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&refreshReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	token, err := kc.refreshToken(refreshToken)
+	token, err := kc.refreshToken(refreshReq.RefreshToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
 		return
@@ -109,15 +112,16 @@ func (kc *KeycloakClient) RefreshToken(c *gin.Context) {
 func (kc *KeycloakClient) getToken(username, password string) (*models.TokenResponse, error) {
 	url := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token", kc.BaseURL, kc.Realm)
 
-	data := strings.NewReader(fmt.Sprintf(
-		"client_id=%s&username=%s&password=%s&grant_type=password",
-		kc.ClientID, username, password,
-	))
-
+	var data *strings.Reader
 	if kc.ClientSecret != "" {
 		data = strings.NewReader(fmt.Sprintf(
 			"client_id=%s&client_secret=%s&username=%s&password=%s&grant_type=password",
 			kc.ClientID, kc.ClientSecret, username, password,
+		))
+	} else {
+		data = strings.NewReader(fmt.Sprintf(
+			"client_id=%s&username=%s&password=%s&grant_type=password",
+			kc.ClientID, username, password,
 		))
 	}
 
@@ -127,9 +131,20 @@ func (kc *KeycloakClient) getToken(username, password string) (*models.TokenResp
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("keycloak error: %s", string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
 	var token models.TokenResponse
-	json.Unmarshal(body, &token)
+	if err := json.Unmarshal(body, &token); err != nil {
+		return nil, err
+	}
 
 	return &token, nil
 }
@@ -138,7 +153,7 @@ func (kc *KeycloakClient) createKeycloakUser(req models.CreateUserRequest) (stri
 	// Получаем admin token
 	adminToken, err := kc.getAdminToken()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get admin token: %v", err)
 	}
 
 	// Создаем пользователя в Keycloak
@@ -149,43 +164,69 @@ func (kc *KeycloakClient) createKeycloakUser(req models.CreateUserRequest) (stri
 		"firstName": req.FirstName,
 		"lastName":  req.LastName,
 		"enabled":   true,
-		"credentials": []map[string]string{
-			{
-				"type":  "password",
-				"value": req.Password,
-			},
-		},
 	}
 
-	jsonData, _ := json.Marshal(userData)
-	req, err := http.NewRequest("POST", userURL, bytes.NewBuffer(jsonData))
+	// Добавляем пароль только если он предоставлен
+	if req.Password != "" {
+		userData["credentials"] = []map[string]interface{}{
+			{
+				"type":      "password",
+				"value":     req.Password,
+				"temporary": false,
+			},
+		}
+	}
+
+	jsonData, err := json.Marshal(userData)
 	if err != nil {
 		return "", err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+adminToken)
-	req.Header.Set("Content-Type", "application/json")
+	httpReq, err := http.NewRequest("POST", userURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+
+	httpReq.Header.Set("Authorization", "Bearer "+adminToken)
+	httpReq.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := client.Do(httpReq)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("failed to create user in Keycloak: %s", string(body))
+	}
+
 	// Извлекаем ID пользователя из Location header
 	location := resp.Header.Get("Location")
 	if location == "" {
-		return "", fmt.Errorf("failed to create user")
+		return "", fmt.Errorf("failed to get user location from response")
 	}
 
 	parts := strings.Split(location, "/")
-	return parts[len(parts)-1], nil
+	userID := parts[len(parts)-1]
+
+	return userID, nil
 }
 
 func (kc *KeycloakClient) getAdminToken() (string, error) {
-	// Упрощенная реализация - в продакшене используйте сервисный аккаунт
-	token, err := kc.getToken("admin", "admin")
+	// В реальном приложении используйте сервисный аккаунт или клиент credentials grant
+	adminUsername := os.Getenv("KEYCLOAK_ADMIN_USERNAME")
+	adminPassword := os.Getenv("KEYCLOAK_ADMIN_PASSWORD")
+
+	if adminUsername == "" {
+		adminUsername = "admin"
+	}
+	if adminPassword == "" {
+		adminPassword = "admin"
+	}
+
+	token, err := kc.getToken(adminUsername, adminPassword)
 	if err != nil {
 		return "", err
 	}
@@ -195,15 +236,16 @@ func (kc *KeycloakClient) getAdminToken() (string, error) {
 func (kc *KeycloakClient) refreshToken(refreshToken string) (*models.TokenResponse, error) {
 	url := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token", kc.BaseURL, kc.Realm)
 
-	data := fmt.Sprintf(
-		"client_id=%s&grant_type=refresh_token&refresh_token=%s",
-		kc.ClientID, refreshToken,
-	)
-
+	var data string
 	if kc.ClientSecret != "" {
 		data = fmt.Sprintf(
 			"client_id=%s&client_secret=%s&grant_type=refresh_token&refresh_token=%s",
 			kc.ClientID, kc.ClientSecret, refreshToken,
+		)
+	} else {
+		data = fmt.Sprintf(
+			"client_id=%s&grant_type=refresh_token&refresh_token=%s",
+			kc.ClientID, refreshToken,
 		)
 	}
 
@@ -213,9 +255,77 @@ func (kc *KeycloakClient) refreshToken(refreshToken string) (*models.TokenRespon
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("keycloak error: %s", string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
 	var token models.TokenResponse
-	json.Unmarshal(body, &token)
+	if err := json.Unmarshal(body, &token); err != nil {
+		return nil, err
+	}
 
 	return &token, nil
+}
+
+// GetUserInfo получает информацию о пользователе из Keycloak
+func (kc *KeycloakClient) GetUserInfo(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+		return
+	}
+
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	if token == authHeader {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Bearer token required"})
+		return
+	}
+
+	userInfo, err := kc.getUserInfo(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, userInfo)
+}
+
+func (kc *KeycloakClient) getUserInfo(accessToken string) (map[string]interface{}, error) {
+	url := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/userinfo", kc.BaseURL, kc.Realm)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get user info")
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var userInfo map[string]interface{}
+	if err := json.Unmarshal(body, &userInfo); err != nil {
+		return nil, err
+	}
+
+	return userInfo, nil
 }

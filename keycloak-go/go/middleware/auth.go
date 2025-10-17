@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"go-keycloak-app/handlers"
+	"go-keycloak-app/go/handlers"
 
 	"github.com/gin-gonic/gin"
 )
