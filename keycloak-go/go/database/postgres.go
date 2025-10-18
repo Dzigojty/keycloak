@@ -13,15 +13,17 @@ import (
 // Глобальная переменная для хранения соединения с БД
 var db *sql.DB
 
-func InitDB() (*sql.DB, error) {
+// InitDB инициализирует соединение с базой данных
+func InitDB() error {
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
 		connStr = "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 	}
 
-	db, err := sql.Open("postgres", connStr)
+	var err error
+	db, err = sql.Open("postgres", connStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %v", err)
+		return fmt.Errorf("failed to open database: %v", err)
 	}
 
 	// Настройка пула соединений
@@ -31,16 +33,32 @@ func InitDB() (*sql.DB, error) {
 
 	// Проверка соединения
 	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %v", err)
+		return fmt.Errorf("failed to ping database: %v", err)
 	}
 
 	// Создание таблиц
 	if err := createTables(db); err != nil {
-		return nil, fmt.Errorf("failed to create tables: %v", err)
+		return fmt.Errorf("failed to create tables: %v", err)
 	}
 
 	log.Println("Successfully connected to PostgreSQL")
-	return db, nil
+	return nil
+}
+
+// GetDB возвращает глобальное соединение с базой данных
+func GetDB() *sql.DB {
+	if db == nil {
+		log.Fatal("Database not initialized. Call InitDB first.")
+	}
+	return db
+}
+
+// CloseDB закрывает соединение с базой данных
+func CloseDB() error {
+	if db != nil {
+		return db.Close()
+	}
+	return nil
 }
 
 func createTables(db *sql.DB) error {
@@ -66,20 +84,4 @@ func createTables(db *sql.DB) error {
 
 	_, err := db.Exec(query)
 	return err
-}
-
-// GetDB возвращает глобальное соединение с базой данных
-func GetDB() *sql.DB {
-	if db == nil {
-		log.Fatal("Database not initialized. Call InitDB first.")
-	}
-	return db
-}
-
-// CloseDB закрывает соединение с базой данных
-func CloseDB() error {
-	if db != nil {
-		return db.Close()
-	}
-	return nil
 }

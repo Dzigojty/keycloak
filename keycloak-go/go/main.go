@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// Инициализация базы данных
-	if _, err := database.InitDB(); err != nil {
+	if err := database.InitDB(); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer database.CloseDB()
