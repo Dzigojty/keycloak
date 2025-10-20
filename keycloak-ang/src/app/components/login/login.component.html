@@ -1,0 +1,86 @@
+<!-- src/app/components/login/login.component.html -->
+<div class="login-container">
+  <div class="login-card">
+    <h1 class="login-title">{{ title }}</h1>
+    
+    <!-- Вариант 1: Кнопка для стандартного Keycloak входа (рекомендуется) -->
+    <div class="login-options">
+      <button 
+        (click)="onKeycloakLogin()" 
+        class="btn btn-primary btn-login"
+        [disabled]="isLoading">
+        <span *ngIf="!isLoading">🔐 Войти через Keycloak</span>
+        <span *ngIf="isLoading">
+          <span class="spinner"></span>
+          Перенаправление...
+        </span>
+      </button>
+    </div>
+
+    <!-- Разделитель -->
+    <div class="divider">
+      <span>или</span>
+    </div>
+
+    <!-- Вариант 2: Кастомная форма (опционально) -->
+    <div class="custom-form" *ngIf="false"> <!-- Поставьте *ngIf="true" если нужна кастомная форма -->
+      <form (ngSubmit)="onDirectLogin()" class="login-form">
+        <div class="form-group">
+          <label for="name" class="form-label">Имя пользователя</label>
+          <input 
+            type="text" 
+            id="name"
+            [(ngModel)]="name" 
+            name="name"
+            class="form-input"
+            placeholder="Введите ваше имя пользователя"
+            (input)="onInputChange()"
+            [disabled]="isLoading">
+        </div>
+        
+        <div class="form-group">
+          <label for="password" class="form-label">Пароль</label>
+          <input 
+            type="password" 
+            id="password"
+            [(ngModel)]="password" 
+            name="password"
+            class="form-input"
+            placeholder="Введите ваш пароль"
+            (input)="onInputChange()"
+            [disabled]="isLoading">
+        </div>
+
+        <!-- Сообщение об ошибке -->
+        <div *ngIf="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+
+        <!-- Кнопка для прямого входа -->
+        <button 
+          type="submit" 
+          class="btn btn-secondary btn-direct-login"
+          [disabled]="isLoading">
+          <span *ngIf="!isLoading">Войти</span>
+          <span *ngIf="isLoading">
+            <span class="spinner"></span>
+            Выполняется вход...
+          </span>
+        </button>
+      </form>
+    </div>
+
+    <div class="login-links">
+      <a href="#" class="link" (click)="onForgotPassword(); $event.preventDefault()">
+        Забыли пароль?
+      </a>
+      <a href="#" class="link" (click)="onRegister(); $event.preventDefault()">
+        Создать аккаунт
+      </a>
+    </div>
+
+    <div class="login-info">
+      <p>Используйте ваши учетные данные Keycloak для входа в систему</p>
+    </div>
+  </div>
+</div>

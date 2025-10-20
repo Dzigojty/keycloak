@@ -1,0 +1,37 @@
+<div class="app-container">
+  <header class="app-header">
+    <h1>{{ title }}</h1>
+    <nav class="nav-tabs">
+      <button 
+        [class.active]="activeTab === 'users'" 
+        (click)="setActiveTab('users')">
+        Users
+      </button>
+      <button 
+        [class.active]="activeTab === 'roles'" 
+        (click)="setActiveTab('roles')">
+        Roles
+      </button>
+      <button 
+        [class.active]="activeTab === 'clients'" 
+        (click)="setActiveTab('clients')">
+        Clients
+      </button>
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <div *ngIf="activeTab === 'users'" class="tab-content">
+      <app-user-form (userCreated)="onUserCreated()"></app-user-form>
+      <app-user-list></app-user-list>
+    </div>
+
+    <div *ngIf="activeTab === 'roles'" class="tab-content">
+      <app-role-management></app-role-management>
+    </div>
+
+    <div *ngIf="activeTab === 'clients'" class="tab-content">
+      <app-client-management></app-client-management>
+    </div>
+  </main>
+</div>

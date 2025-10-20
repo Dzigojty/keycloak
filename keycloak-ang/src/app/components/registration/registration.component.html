@@ -1,0 +1,28 @@
+<div class="registration-container">
+  <button routerLink="/" class="btn-corner">На главную</button>
+  
+  <h1>{{ title }}</h1>
+  <form (ngSubmit)="onSubmit()">  <!-- Добавьте (ngSubmit) -->
+    <div class="form-group">
+      <label for="name">Имя:</label>
+      <input type="name" id="name" [(ngModel)]="name" name="name" required>
+    </div>
+
+    <div class="form-group">
+      <label for="position">Должность:</label>
+      <input type="position" id="position" [(ngModel)]="position" name="position" required>
+    </div>
+    
+    <div class="form-group">
+      <label for="password1">Пароль:</label>
+      <input type="password1" id="password1" [(ngModel)]="password1" name="password1" required>
+    </div>
+
+    <div class="form-group">
+      <label for="password2">Повторите пароль:</label>
+      <input type="password2" id="password2" [(ngModel)]="password2" name="password2" required>
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+  </form>
+</div>
