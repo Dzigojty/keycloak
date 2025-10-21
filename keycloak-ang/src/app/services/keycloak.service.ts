@@ -6,15 +6,17 @@ import { tap, catchError, switchMap } from 'rxjs/operators';
 
 // Keycloak конфигурация - обновите под ваш контейнер
 const keycloakConfig = {
-  url: 'http://localhost:8080/auth',
-  realm: 'baspik',                    // Имя вашего realm
-  clientId: 'angular-app'             // Client ID который вы создали
+  url: 'http://localhost:8080',
+  realm: 'my-app',                    // Имя вашего realm
+  clientId: 'angular-app',             // Client ID который вы создали
+  username: 'admin',
+  password: 'admin'
 };
 
 @Injectable({
   providedIn: 'root'
 })
-export class KeycloakService {
+export class KeycloakAdminService {
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   private userProfileSubject = new BehaviorSubject<any>(null);
   
@@ -263,5 +265,54 @@ export class KeycloakService {
         this.handleAuthSuccess(response);
       })
     );
+  }
+
+  // Получение токена администратора
+  private async getAdminToken(): Promise<string> {
+    const body = new URLSearchParams();
+    body.set('client_id', 'admin-cli');
+    body.set('username', keycloakConfig.username);
+    body.set('password', keycloakConfig.password);
+    body.set('grant_type', 'password');
+
+    const response = await fetch(`${keycloakConfig.url}/realms/master/protocol/openid-connect/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString()
+    });
+    
+    const data = await response.json();
+    return data.access_token;
+  }
+
+  // Создание пользователя в Keycloak
+  async createUser(userData: any): Promise<any> {
+    const token = await this.getAdminToken();
+    
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
+
+    const userPayload = {
+      username: userData.username,
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      enabled: true,
+      credentials: [{
+        type: "password",
+        value: userData.password,
+        temporary: false
+      }]
+    };
+
+    return this.http.post(
+      `${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/users`,
+      userPayload,
+      { headers }
+    ).toPromise();
   }
 }

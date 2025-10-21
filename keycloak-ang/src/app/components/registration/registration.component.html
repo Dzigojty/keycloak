@@ -1,28 +1,23 @@
+<!-- registration.component.html -->
 <div class="registration-container">
-  <button routerLink="/" class="btn-corner">На главную</button>
+  <h2>Регистрация</h2>
   
-  <h1>{{ title }}</h1>
-  <form (ngSubmit)="onSubmit()">  <!-- Добавьте (ngSubmit) -->
+  <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
     <div class="form-group">
-      <label for="name">Имя:</label>
-      <input type="name" id="name" [(ngModel)]="name" name="name" required>
+      <label>Имя пользователя</label>
+      <input type="text" formControlName="username" class="form-control">
     </div>
 
     <div class="form-group">
-      <label for="position">Должность:</label>
-      <input type="position" id="position" [(ngModel)]="position" name="position" required>
-    </div>
-    
-    <div class="form-group">
-      <label for="password1">Пароль:</label>
-      <input type="password1" id="password1" [(ngModel)]="password1" name="password1" required>
+      <label>Email</label>
+      <input type="email" formControlName="email" class="form-control">
     </div>
 
     <div class="form-group">
-      <label for="password2">Повторите пароль:</label>
-      <input type="password2" id="password2" [(ngModel)]="password2" name="password2" required>
+      <label>Пароль</label>
+      <input type="password" formControlName="password" class="form-control">
     </div>
-    
+
     <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
   </form>
 </div>

@@ -1,13 +1,22 @@
-<div class="home-container">
-  <div class="hero-section">
+<div class="container">
     <h1>{{ title }}</h1>
     
-    <div class="action-buttons">
-      <button routerLink="/login" class="btn btn-primary btn-large">
-        Вход
-      </button>
-      <button routerLink="/registration" class="btn btn-secondary btn-large">
-        Регистрация
-      </button>
+    <!-- Кнопка выбора файла -->
+    <div>
+        <input type="file" id="fileInput" accept=".txt" 
+               (change)="onFileSelected($event)" style="display: none;">
+        <button class="btn" (click)="triggerFileInput()">
+            📄 Выбрать TXT-документ
+        </button>
     </div>
-  </div>
+
+    <!-- Блок для отображения содержимого -->
+    <div *ngIf="isContentVisible" class="file-content">
+        <pre>{{ fileContent }}</pre>
+    </div>
+
+    <!-- Кнопка перехода к авторизации -->
+    <div>
+        <a routerLink="/entrance" class="btn">🔐 Вход / Регистрация</a>
+    </div>
+</div>

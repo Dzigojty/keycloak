@@ -34,6 +34,6 @@ func main() {
 		api.DELETE("/users/:id", handlers.DeleteUser(database.GetDB()))
 	}
 
-	log.Println("Server starting on :8080")
-	router.Run(":8080")
+	log.Println("Server starting on :9000")
+	router.Run(":9000")
 }

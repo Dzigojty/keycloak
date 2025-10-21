@@ -1,112 +1,71 @@
+/* registration.component.css */
 .registration-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  text-align: center;
-  padding: 2rem;
-}
-
-.registration-container h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-}
-
-.registration-container p {
-  font-size: 1.2rem;
-  margin-bottom: 2rem;
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  border: none;
+  max-width: 500px;
+  margin: 50px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
   border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-  color: white;
-  background-color: #4CAF50;
-}
-
-.btn:hover {
-  background-color: #45a049;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.registration-container {
-  position: relative; /* Добавьте это для абсолютного позиционирования */
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  text-align: center;
-  padding: 2rem;
-}
-
-/* Создайте отдельный класс для кнопки в углу */
-.btn-corner {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-  color: white;
-  background-color: #4CAF50;
-}
-
-.btn-corner:hover {
-  background-color: #45a049;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 .form-group {
-  margin-bottom: 1rem;
-  text-align: left;
+  margin-bottom: 15px;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: bold;
+.form-row {
+  display: flex;
+  gap: 15px;
 }
 
-.form-group input {
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-control {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 12px;
+  border: 1px solid #ccc;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn {
+  width: 100%;
+  padding: 10px;
+  background: #007bff;
   color: white;
-  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-.form-group input:focus {
-  outline: none;
-  border-color: #4CAF50;
-  background: rgba(255, 255, 255, 0.2);
+.btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
 }
 
-form {
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  backdrop-filter: blur(10px);
+.error {
+  color: #dc3545;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.message.error {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.message.success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.login-link {
+  margin-top: 20px;
+  text-align: center;
 }
