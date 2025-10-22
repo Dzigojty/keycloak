@@ -1,45 +1,43 @@
+// components/home/home.component.ts
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-home',
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.css']
+  template: `
+    <div style="text-align: center; padding: 50px;">
+      <h1>Добро пожаловать!</h1>
+      <p>Keycloak инициализирован успешно</p>
+      
+      <div style="margin-top: 30px;">
+        <button (click)="goToLogin()" 
+                style="margin: 10px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px;">
+          Вход
+        </button>
+        
+        <button (click)="goToRegister()" 
+                style="margin: 10px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px;">
+          Регистрация
+        </button>
+      </div>
+
+      <div style="margin-top: 20px; color: green;">
+        Кнопки должны работать теперь!
+      </div>
+    </div>
+  `
 })
 export class HomeComponent {
-  title = 'Добро пожаловать на главную страницу!';
-  fileContent: string = '';
-  isContentVisible: boolean = false;
+  
+  constructor(private router: Router) {}
 
-  onFileSelected(event: any): void {
-    const file: File = event.target.files[0];
-    
-    if (file && file.type === 'text/plain') {
-      this.readFile(file);
-    } else if (file) {
-      alert('Пожалуйста, выберите файл в формате TXT');
-    }
+  goToLogin() {
+    console.log('Переход на страницу входа');
+    this.router.navigate(['/login']);
   }
 
-  private readFile(file: File): void {
-    const reader = new FileReader();
-    
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      this.fileContent = (e.target as FileReader).result as string;
-      this.isContentVisible = true;
-    };
-    
-    reader.onerror = () => {
-      alert('Ошибка при чтении файла');
-    };
-    
-    reader.readAsText(file, 'UTF-8');
-  }
-
-  triggerFileInput(): void {
-    // В Angular лучше использовать ViewChild вместо прямого доступа к DOM
-    const fileInput = document.getElementById('fileInput') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.click();
-    }
+  goToRegister() {
+    console.log('Переход на страницу регистрации');
+    this.router.navigate(['/register']);
   }
 }

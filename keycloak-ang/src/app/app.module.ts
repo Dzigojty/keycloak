@@ -1,14 +1,17 @@
 // app.module.ts
 import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms'; // ← ДОБАВЬТЕ FormsModule
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 import { KeycloakAngularModule, KeycloakService } from 'keycloak-angular';
 
 import { AppComponent } from './app.component';
 import { RegistrationComponent } from './components/registration/registration.component';
-import { LoginComponent } from './components/login/login.component'; // ← ДОБАВЬТЕ ЭТОТ ИМПОРТ
+import { EntranceComponent } from './components/entrance/entrance.component';
+import { LoginComponent } from './components/login/login.component';
+import { DashboardComponent } from './components/dashboard/dashboard.component';
 
 import { routes } from './app.routes';
 
@@ -18,14 +21,24 @@ function initializeKeycloak(keycloak: KeycloakService) {
     keycloak.init({
       config: {
         url: 'http://localhost:8080',
-        realm: 'my-app', // ← Используйте ваш realm
-        clientId: 'angular-app' // ← Создайте отдельного клиента для Angular
+        realm: 'my-app',
+        clientId: 'angular-app'
       },
       initOptions: {
-        onLoad: 'login-required', // ← Измените на login-required для теста
+        // ⚠️ ИЗМЕНИТЕ ЭТУ НАСТРОЙКУ ⚠️
+        onLoad: 'check-sso', // Вместо 'login-required'
         checkLoginIframe: false,
         pkceMethod: 'S256'
       }
+    }).then((authenticated) => {
+      console.log('Keycloak инициализирован, пользователь аутентифицирован:', authenticated);
+      if (authenticated) {
+        console.log('Пользователь уже вошел - можно перенаправить на dashboard');
+      } else {
+        console.log('Пользователь не аутентифицирован - показываем логин форму');
+      }
+    }).catch(error => {
+      console.error('Ошибка инициализации Keycloak:', error);
     });
 }
 
@@ -33,12 +46,15 @@ function initializeKeycloak(keycloak: KeycloakService) {
   declarations: [
     AppComponent,
     RegistrationComponent,
-    LoginComponent // ← ДОБАВЬТЕ ЭТО В DECLARATIONS
+    EntranceComponent,
+    LoginComponent,
+    DashboardComponent
   ],
   imports: [
     BrowserModule,
     ReactiveFormsModule,
-    FormsModule, // ← ДОБАВЬТЕ ЭТО ДЛЯ ngModel
+    CommonModule,
+    FormsModule,
     HttpClientModule,
     RouterModule.forRoot(routes),
     KeycloakAngularModule
